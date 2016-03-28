@@ -1,0 +1,221 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>CA Web Interface</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="style.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="js/cufon-yui.js"></script>
+<script type="text/javascript" src="js/arial.js"></script>
+<script type="text/javascript" src="js/cuf_run.js"></script>
+<script language="javascript" type="text/javascript" src="js/jquery.js"></script>
+<script type="text/javascript" src="js/radius.js"></script>
+<script type="text/javascript">
+        var result = {};
+        function loadPopup(){
+            if(popupStatus==0){
+                $("#main").css({
+                    "opacity": "0.5"
+                });
+                $("#main").fadeIn("slow");
+                $("#popupContact").fadeIn("slow");
+                popupStatus = 1;
+            }
+        }
+        
+        function disablePopup(){
+            if(popupStatus==1){
+                $("#main").css({
+                    "opacity": "1"
+                });
+                $("#popupContact").fadeOut("slow");
+                $("#cn").val("");
+                
+                popupStatus = 0;
+            }
+        }
+        
+        function centerPopup(){
+            var windowWidth = document.documentElement.clientWidth;
+            var windowHeight = document.documentElement.clientHeight;
+            var popupHeight = $("#popupContact").height();
+            var popupWidth = $("#popupContact").width();
+            $("#popupContact").css({
+                "position": "absolute",
+                "top": windowHeight/2-popupHeight/2,
+                "left": windowWidth/2-popupWidth/2
+            });
+        }
+
+    $(".document").ready(function () {
+        popupStatus = 0;
+        $("#popupContactClose").click( function() {
+                disablePopup();
+                times = [];
+        });
+        $('#popupl').click( function() {
+            centerPopup();
+            loadPopup();
+        });
+        $.post("api",{ data: ["crtget"] }, function( data ) {
+            
+            $.each( data, function ( key, val ) {
+                if ( val[0] == 'R' ) {
+                    result[key] = [];
+                    result[key][0] = val[3];
+                    result[key][1] = val[0];
+                }
+                else if ( val[0] == 'V' ) {
+                    result[key] = [];
+                    result[key][0] = val[2];
+                    result[key][1] = val[0];
+                    result[key][2] = val[5]
+                }
+                $.each( val, function( ky, subj ) {
+                    if ( ky == val.length-2) {
+                        if ( val[0] == 'R' ) {
+                            result[key][2] = [];
+                        }
+                        else if ( val[0] == 'V' ) {
+                            result[key][3] = [];
+                        }
+                        $.each( subj, function( k, v ) {
+                            var pr = v.split('=')[0];
+                            var vl = v.split('=')[1];
+                            if ( val[0] == 'R' ) {
+                                result[key][2][pr] = vl;
+                            }
+                            else if ( val[0] == 'V' ) {
+                                result[key][3][pr] = vl;
+                            }
+
+                        });
+                    }
+
+                });
+                if ( result[key][1] == 'V' ) {
+                    if ( result[key][2] == '1' ) {
+                        $('#certs').append('<tr><td>'+result[key][0]+"</td><td>"+result[key][1]+"</td><td>C="+result[key][3]['C']+", CN="+result[key][3]['CN']+", O="+result[key][3]['O']+"</td><td><button id="+result[key][0]+">Revoke</button><button id=dw"+result[key][3]['CN']+">Download</button></td></tr>");
+                    }
+                    else if ( result[key][2] == '0' ) {
+                        $('#certs').append('<tr><td>'+result[key][0]+"</td><td>"+result[key][1]+"</td><td>C="+result[key][3]['C']+", CN="+result[key][3]['CN']+", O="+result[key][3]['O']+"</td><td><button id="+result[key][0]+">Revoke</button></td></tr>");
+                    }
+                    $('#'+result[key][0]).click( function () {
+                        choise = confirm("Are you really want to revoke certificate?");
+                        if ( choise == true ) {
+                            $.post("api",{ data: ["crtrev",result[key][0],result[key][3]['CN']] }, function () { location.reload() })
+                        }
+                    });
+                    $('#dw'+result[key][3]['CN']).click( function () {
+                        window.open("/arc/"+result[key][3]['CN']+".tar","_blank")
+                    });
+                }
+                else {
+                    $('#certs').append('<tr><td>'+result[key][0]+"</td><td>"+result[key][1]+"</td><td>C="+result[key][2]['C']+", CN="+result[key][2]['CN']+", O="+result[key][2]['O']+"</td></td></tr>");
+                }
+            });    
+        });
+        $('#crtgen').click( function () {
+            cn = $('#cn').val();
+            var mtch = 0;
+            if ( cn != '' ) {
+                $.each( result, function ( k,v ) {
+                    if ( v[1] == 'V' ) {
+                        if ( cn == v[3]['CN'] ) {
+                            mtch = 1
+                        }
+                    }
+                });
+                if ( mtch == 0 ) { 
+                    tp = $('input[name="tp"]:checked').val();
+                    $.post("api",{ data: ["crtgen", cn, '0', tp] }, function () { location.reload() })
+                }
+                else {
+                    $('#cn').val("CN already exists");
+                    $('#cn').focus( function () { $('#cn').val("") })
+                }
+            }
+            else {
+                $('#cn').removeClass('nrm');
+                $('#cn').addClass('err');
+                $('#cn').focus( function () { 
+                    $('#cn').removeClass('err')
+                    $('#cn').addClass('nrm')
+                });
+            }
+                
+        });
+        
+    });
+    
+</script>
+</head>
+<body>
+<!-- START PAGE SOURCE -->
+<div class="main" id="main">
+  <div class="header">
+    <div class="header_resize">
+      <div class="menu_nav">
+
+      </div>
+      <div class="logo">
+        <h1><a href="index.html">CA Web<span> Interface</span></a> <small>Take it easy</small></h1>
+      </div>
+      <div class="clr"></div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="content_resize" align='center'>
+      <div class="mainbar">
+        <div class="article">
+          <h2><span>Certificate</span> list</h2>
+          <div class="clr"></div>
+          <div style='position:relative;height:100%;' id='frtbl'>
+          <center>
+          <table border='1'>
+            <tbody id='certs'>
+                <tr>
+                    <td>S/N</td>
+                    <td>State</td>
+                    <td>Options</td>
+                    <td>Action</td>
+                </tr>
+            </tbody>
+        </table>
+        </center>
+        </div>
+        <div class="clr"></div>
+        <div style='position:relative;margin:20px' id='but'>
+            <button id="popupl">Add</button>
+        </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer">
+    <div class="footer_resize">
+      <p class="lf">Copyright &copy; 2016 Artem Avdonin - All Rights Reserved</p>
+      <p class="rf"><a href="http://www.free-css.com/">Free CSS Templates</a> by <a href="http://www.coolwebtemplates.net/">Cool Website Templates</a></p>
+      <div class="clr"></div>
+    </div>
+  </div>
+</div>
+<div id="popupContact" style="display: none; border: solid 1px black;background-color: #FFFFFF;">
+    <div style="height: 100px; width: 340px;margin: 10px;">
+        <div style='position:relative;width:100%;height:20%;'>
+            <button id="popupContactClose">X</button>
+        </div>
+        <div style='position:relative;width:100%;height:80%;margin-top:15px;'>
+            <div style='position:relative;width:60%;float:left;'>
+                Canonical Name:<font color='red'>*</font><br>
+                <input id='cn'> 
+            </div>
+            <div align='right' style='position:relative;width:40%;float:left;'>
+                <button id='crtgen'>Generate New</button><br><br>
+                <input type='radio' value='srv' name='tp'>Server</input><input type='radio' value='clnt' name='tp' checked>Client</input>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- END PAGE SOURCE -->
+</body>
+</html>

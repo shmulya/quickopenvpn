@@ -1,0 +1,21 @@
+port 1194
+proto udp
+dev tun
+ca %s/ca.crt
+cert %s/openvpn_keys/server.crt
+key %s/openvpn_keys/server.key
+dh %s/dh2048.pem
+crl-verify %s/crl.pem
+tls-server
+tls-auth %s/ta.key
+server 10.8.0.0 255.255.255.0
+ifconfig-pool-persist ipp.txt
+client-config-dir ccd
+push "dhcp-option DNS 8.8.8.8"
+keepalive 10 120
+comp-lzo
+persist-key
+persist-tun
+status openvpn-status.log
+verb 3
+log /var/log/openvpn.log
