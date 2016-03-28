@@ -61,8 +61,11 @@
                 result[key][0] = val[0];
                 result[key][1] = val[1];
                 result[key][3] = val[3];
+                result[key][4] = val[4];
+                result[key][5] = val[5];
+                result[key][6] = val[6];
                 $.each( val, function( ky, subj ) {
-                    if ( ky == val.length-2) {
+                    if ( ky == val.length-5) {
                         result[key][2] = [];
                         $.each( subj, function( k, v ) {
                             var pr = v.split('=')[0];
@@ -74,10 +77,10 @@
                 });
                 if ( result[key][0] == 'V' ) {
                     if ( result[key][3] == '1' ) {
-                        $('#certs').append('<tr><td>'+result[key][1]+"</td><td>"+result[key][0]+"</td><td>C="+result[key][2]['C']+", CN="+result[key][2]['CN']+", O="+result[key][2]['O']+"</td><td><button id="+result[key][1]+">Revoke</button><button id=dw"+result[key][2]['CN']+">Download</button></td></tr>");
+                        $('#certs').append('<tr><td>'+result[key][1]+"</td><td>"+result[key][0]+"</td><td>"+result[key][4]+"</td><td>"+result[key][5]+"</td><td>C="+result[key][2]['C']+", CN="+result[key][2]['CN']+", O="+result[key][2]['O']+", CertType: "+result[key][6]+"</td><td><button id="+result[key][1]+">Revoke</button><button id=dw"+result[key][2]['CN']+">Download</button></td></tr>");
                     }
                     else if ( result[key][3] == '0' ) {
-                        $('#certs').append('<tr><td>'+result[key][1]+"</td><td>"+result[key][0]+"</td><td>C="+result[key][2]['C']+", CN="+result[key][2]['CN']+", O="+result[key][2]['O']+"</td><td><button id="+result[key][1]+">Revoke</button></td></tr>");
+                        $('#certs').append('<tr><td>'+result[key][1]+"</td><td>"+result[key][0]+"</td><td>"+result[key][4]+"</td><td>"+result[key][5]+"</td><td>C="+result[key][2]['C']+", CN="+result[key][2]['CN']+", O="+result[key][2]['O']+", CertType: "+result[key][6]+"</td><td><button id="+result[key][1]+">Revoke</button></td></tr>");
                     }
                     $('#'+result[key][1]).click( function () {
                         choise = confirm("Are you really want to revoke certificate?");
@@ -90,7 +93,7 @@
                     });
                 }
                 else {
-                    $('#certs').append('<tr><td>'+result[key][1]+"</td><td>"+result[key][0]+"</td><td>C="+result[key][2]['C']+", CN="+result[key][2]['CN']+", O="+result[key][2]['O']+"</td></td></tr>");
+                    $('#certs').append('<tr><td>'+result[key][1]+"</td><td>"+result[key][0]+"</td><td>"+result[key][4]+"</td><td>"+result[key][5]+"</td><td>C="+result[key][2]['C']+", CN="+result[key][2]['CN']+", O="+result[key][2]['O']+", CertType: "+result[key][6]+"</td></td></tr>");
                 }
             });    
         });
@@ -156,6 +159,8 @@
                 <tr>
                     <td>S/N</td>
                     <td>State</td>
+                    <td>Start Date</td>
+                    <td>End Date</td>
                     <td>Options</td>
                     <td>Action</td>
                 </tr>

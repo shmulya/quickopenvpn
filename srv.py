@@ -7,7 +7,7 @@ from urllib import unquote
 WORKDIR = os.getcwd()
 CERTDIR = WORKDIR+'/ca' # DO NOT CHANGE IF DEFAULT INSTALL path to your certificate storage (keystorage from install)
 ipadr = '127.0.0.1' #IP for HTTPS connection
-org = 'OpenVPN_Server' #Your company
+org = 'Shmula.inc' #Your company
 certFile = CERTDIR+'/sslcert.pem'
 logging.basicConfig(format='[%(levelname)s] [%(asctime)s] - %(message)s', filename=WORKDIR+'/log/crt.log', level=logging.WARN)
 
@@ -40,9 +40,11 @@ def certlist():
             n = n + 1
     for str in crtinfolist:
         if str[0] == 'V':
-            crtlist.append([str[0],str[2],str[4],str[5]])
+            (bf,af,tt) = tt_of_cert(str[2],str[0])
+            crtlist.append([str[0],str[2],str[4],str[5],bf,af,tt])
         elif str[0] == 'R':
-            crtlist.append([str[0],str[3],str[5],str[6]])
+            (bf,af,tt) = tt_of_cert(str[3],str[0])
+            crtlist.append([str[0],str[3],str[5],str[6],bf,af,tt])
     return crtlist
 
 def response(cl,cont,resp=200,type='text/html'):
@@ -50,6 +52,32 @@ def response(cl,cont,resp=200,type='text/html'):
     cl.send_header("Content-type", type)
     cl.end_headers()
     cl.wfile.write(cont)
+
+def tt_of_cert(sn,st):
+    tt = subprocess.check_output("openssl x509 -text -in '%s/%s.pem' -noout | grep 'TLS' | awk '{print($3)}'"%(CERTDIR,sn), shell=True)
+    bf = subprocess.check_output("openssl x509 -text -in '%s/%s.pem' -noout | grep 'Not Before' | awk '{print($3,$4,$5,$6,$7)}'"%(CERTDIR,sn), shell=True)
+    if st == 'V':
+        af = subprocess.check_output("openssl x509 -text -in '%s/%s.pem' -noout | grep 'Not After :' | awk '{print($4,$5,$6,$7,$8)}'"%(CERTDIR,sn), shell=True)
+        return (bf[:-1],af[:-1],tt[:-1])
+    if st == 'R':
+        af = revtime(sn)
+        return (bf[:-1],af,tt[:-1])
+
+def revtime(sn):
+    fl = False
+    tmp = []
+    rvtime = ''
+    crl = subprocess.check_output("openssl crl -text -in '%s/crl.pem' -noout"%CERTDIR, shell = True)
+    crl = crl.split('\n')
+    for row in crl:
+        if fl == True:
+            tmp = row.split(' ')
+            rvtime = tmp[10]+" "+tmp[11]+" "+ tmp[12]+" "+tmp[13]+" "+tmp[14]
+            return rvtime
+            break
+        srch = re.search('Serial Number: %s'%sn, row)
+        if srch != None:
+            fl = True
 
 def certgen(cn,f,typ,c='RU',o=org, csr=None):
     if f == '0':
@@ -173,11 +201,11 @@ class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     else:
                         logging.error('Can\'t revoke certificate, CN is '+req[2])
                         response(self,'Error, see server log', 500)
-            except Exception:
+            #except Exception:
+            #    pass
+            except IndexError:
                 logging.error('Check arguments in post request from client, post body is %s'%post_body)
                 response(self, 'Error, see server log', 500)
-            except IndexError:
-                print 'Err'
     def log_message(self, format, *args):
         logstr = '[%s] - %s %s\n'%(self.log_date_time_string(),self.address_string(),format%args)
         logging.debug(logstr)
