@@ -95,7 +95,7 @@ if os.path.exists(workdir+'/data') == True:
         print "Can't sign OpenVPN server certificate"
     if flt == True:
         print ''
-        print 'Your openvpn.conf below: '
+        print 'Your openvpn.conf in server.conf'
         print ''
         open(workdir+'/start','w').write('cd "%s"\npython srv.py&'%workdir)
         open(workdir+'/stop','w').write("PID=`ps aef | grep srv.py | grep -v grep | awk '{print ($1)}'`\nkill -9 $PID")
