@@ -9,7 +9,8 @@ Run 'python install.py' in command line. Follow the instructions.
 
   After installation open **srv.py** with text editor and change *ipadr* and *org*
 to yours. Change *CERTDIR* if you change path to CA from default.
-  **install.py** returns openvpn server config (server.conf). You can start openvpn with 
+  **install.py** returns openvpn server config (server.conf) and installing CA
+server with web interface. You can start openvpn with 
 by 
 ```
 sudo openvpn --config path_to_server.conf
@@ -21,3 +22,29 @@ at
 https://ipard(or_your_domain):4443/
 ```
 
+## How to
+
+
+Web interface helps to generate new user's and server's certificates. It needs to 
+user authentication in OpenVPN. Also you can use server certificate for self-
+signed SSL HTTPS Server.
+After generate new certificate you can download tarball with user's private key,
+signed certificate, openvpn client config file, CA certificate and TLS key. Check
+path to files in .conf file and start openpvn with this config file. Run
+```
+ping 10.8.0.1
+```
+Congratulation, if 10.8.0.1 sent pong. See openvpn log for details. 
+If you want use your openvpn server as Internet gate uncomment string
+```
+net.ipv4.ip_forward=1
+```
+in **/etc/sysctl.conf** and run
+```
+sudo sysctl -p
+```
+than use iptables for configure nat
+```
+sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+```
+After reboot iptables config will be reset.
