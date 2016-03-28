@@ -106,7 +106,8 @@ if os.path.exists(workdir+'/data') == True:
         str = prks + '\n' + crts
         itssl = open(certdir+'/sslcert.pem','w').write(str)
         file = open('%s/data/templates/server.conf'%workdir,'r').read()
-        print file%(certdir,certdir,certdir,certdir,certdir,certdir)
+        open(workdir+'/server.conf','w').write(file%(certdir,certdir,certdir,certdir,certdir,certdir))
+        
     else:
         print ''
         print 'Error, read %s/log/ for more information'%workdir

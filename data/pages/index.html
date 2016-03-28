@@ -4,11 +4,9 @@
 <title>CA Web Interface</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link href="style.css" rel="stylesheet" type="text/css" />
-<script type="text/javascript" src="js/cufon-yui.js"></script>
-<script type="text/javascript" src="js/arial.js"></script>
-<script type="text/javascript" src="js/cuf_run.js"></script>
+
 <script language="javascript" type="text/javascript" src="js/jquery.js"></script>
-<script type="text/javascript" src="js/radius.js"></script>
+
 <script type="text/javascript">
         var result = {};
         function loadPopup(){
@@ -59,58 +57,40 @@
         $.post("api",{ data: ["crtget"] }, function( data ) {
             
             $.each( data, function ( key, val ) {
-                if ( val[0] == 'R' ) {
-                    result[key] = [];
-                    result[key][0] = val[3];
-                    result[key][1] = val[0];
-                }
-                else if ( val[0] == 'V' ) {
-                    result[key] = [];
-                    result[key][0] = val[2];
-                    result[key][1] = val[0];
-                    result[key][2] = val[5]
-                }
+                result[key] = [];
+                result[key][0] = val[0];
+                result[key][1] = val[1];
+                result[key][3] = val[3];
                 $.each( val, function( ky, subj ) {
                     if ( ky == val.length-2) {
-                        if ( val[0] == 'R' ) {
-                            result[key][2] = [];
-                        }
-                        else if ( val[0] == 'V' ) {
-                            result[key][3] = [];
-                        }
+                        result[key][2] = [];
                         $.each( subj, function( k, v ) {
                             var pr = v.split('=')[0];
                             var vl = v.split('=')[1];
-                            if ( val[0] == 'R' ) {
-                                result[key][2][pr] = vl;
-                            }
-                            else if ( val[0] == 'V' ) {
-                                result[key][3][pr] = vl;
-                            }
-
+                            result[key][2][pr] = vl;
                         });
                     }
 
                 });
-                if ( result[key][1] == 'V' ) {
-                    if ( result[key][2] == '1' ) {
-                        $('#certs').append('<tr><td>'+result[key][0]+"</td><td>"+result[key][1]+"</td><td>C="+result[key][3]['C']+", CN="+result[key][3]['CN']+", O="+result[key][3]['O']+"</td><td><button id="+result[key][0]+">Revoke</button><button id=dw"+result[key][3]['CN']+">Download</button></td></tr>");
+                if ( result[key][0] == 'V' ) {
+                    if ( result[key][3] == '1' ) {
+                        $('#certs').append('<tr><td>'+result[key][1]+"</td><td>"+result[key][0]+"</td><td>C="+result[key][2]['C']+", CN="+result[key][2]['CN']+", O="+result[key][2]['O']+"</td><td><button id="+result[key][1]+">Revoke</button><button id=dw"+result[key][2]['CN']+">Download</button></td></tr>");
                     }
-                    else if ( result[key][2] == '0' ) {
-                        $('#certs').append('<tr><td>'+result[key][0]+"</td><td>"+result[key][1]+"</td><td>C="+result[key][3]['C']+", CN="+result[key][3]['CN']+", O="+result[key][3]['O']+"</td><td><button id="+result[key][0]+">Revoke</button></td></tr>");
+                    else if ( result[key][3] == '0' ) {
+                        $('#certs').append('<tr><td>'+result[key][1]+"</td><td>"+result[key][0]+"</td><td>C="+result[key][2]['C']+", CN="+result[key][2]['CN']+", O="+result[key][2]['O']+"</td><td><button id="+result[key][1]+">Revoke</button></td></tr>");
                     }
-                    $('#'+result[key][0]).click( function () {
+                    $('#'+result[key][1]).click( function () {
                         choise = confirm("Are you really want to revoke certificate?");
                         if ( choise == true ) {
-                            $.post("api",{ data: ["crtrev",result[key][0],result[key][3]['CN']] }, function () { location.reload() })
+                            $.post("api",{ data: ["crtrev",result[key][1],result[key][2]['CN']] }, function () { location.reload() })
                         }
                     });
-                    $('#dw'+result[key][3]['CN']).click( function () {
-                        window.open("/arc/"+result[key][3]['CN']+".tar","_blank")
+                    $('#dw'+result[key][2]['CN']).click( function () {
+                        window.open("/arc/"+result[key][2]['CN']+".tar","_blank")
                     });
                 }
                 else {
-                    $('#certs').append('<tr><td>'+result[key][0]+"</td><td>"+result[key][1]+"</td><td>C="+result[key][2]['C']+", CN="+result[key][2]['CN']+", O="+result[key][2]['O']+"</td></td></tr>");
+                    $('#certs').append('<tr><td>'+result[key][1]+"</td><td>"+result[key][0]+"</td><td>C="+result[key][2]['C']+", CN="+result[key][2]['CN']+", O="+result[key][2]['O']+"</td></td></tr>");
                 }
             });    
         });
@@ -119,8 +99,8 @@
             var mtch = 0;
             if ( cn != '' ) {
                 $.each( result, function ( k,v ) {
-                    if ( v[1] == 'V' ) {
-                        if ( cn == v[3]['CN'] ) {
+                    if ( v[0] == 'V' ) {
+                        if ( cn == v[2]['CN'] ) {
                             mtch = 1
                         }
                     }

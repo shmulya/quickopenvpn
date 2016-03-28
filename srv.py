@@ -21,6 +21,7 @@ def userconfig(cn):
 def certlist():
     crtbase = open(CERTDIR+'/index.txt','r')
     crtinfolist = []
+    crtlist = []
     for line in crtbase:
         crtinfolist.append(line.split())
     n = 0
@@ -37,7 +38,12 @@ def certlist():
             crtinfolist[n][5] = el[5][1:].split('/')
             crtinfolist[n].append('0')
             n = n + 1
-    return crtinfolist
+    for str in crtinfolist:
+        if str[0] == 'V':
+            crtlist.append([str[0],str[2],str[4],str[5]])
+        elif str[0] == 'R':
+            crtlist.append([str[0],str[3],str[5],str[6]])
+    return crtlist
 
 def response(cl,cont,resp=200,type='text/html'):
     cl.send_response(resp)
