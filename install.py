@@ -37,9 +37,9 @@ if os.path.exists(workdir+'/data') == True:
             conf.close()
             fl = True
         else:
-            cho = raw_input('Directory %s already exist, do you want to use it (all files will be deleted)?: [y/n] ').lower()
+            cho = raw_input('Directory %s already exist, do you want to use it (all files will be deleted)?: [y/n] '%certdir).lower()
             if cho in yes:
-                res = subprocess.call('cd "%s" && mkdir log && mkdir tmp'%workdir)
+                res = subprocess.call('cd "%s" && mkdir log && mkdir tmp'%workdir, shell = True)
                 res = subprocess.call('cd "%s" && rm -rf * && mkdir arc && touch serial && echo 01 > serial && touch index.txt'%(certdir), shell=True, stdout=open('/dev/null', 'w'), stderr=subprocess.STDOUT)
                 file = open('%s/data/templates/openssl.tmp'%workdir,'r').read()
                 conf = open('%s/openssl.cnf'%certdir,'w')
