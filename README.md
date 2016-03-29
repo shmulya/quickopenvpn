@@ -5,7 +5,11 @@
 ```
 pip install pyyaml
 ```
-And run 'python install.py' in command line. Follow the instructions.
+And run 
+```
+python install.py
+```
+in command line. Follow the instructions.
 
 
 ## Run

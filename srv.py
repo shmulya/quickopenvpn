@@ -208,7 +208,6 @@ if os.path.exists(runpath+'/config') == True:
     
     conf = open('%s/config'%runpath,'r').read()
     config = yaml.load(conf)
-    print config
     WORKDIR = config.get('WORKDIR')
     CERTDIR = config.get('CERTDIR')
     certFile = config.get('sslcrt')
