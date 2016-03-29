@@ -218,7 +218,7 @@ if os.path.exists(runpath+'/config') == True:
     
     httpd = BaseHTTPServer.HTTPServer((ipadr, 4443), MyHandler)
     
-    httpd.socket = ssl.wrap_socket (httpd.socket, certfile='ca/sslcert.pem', server_side=True)
+    httpd.socket = ssl.wrap_socket (httpd.socket, certfile=CERTDIR+'/sslcert.pem', server_side=True)
     httpd.serve_forever()
 else:
     print '======================================='
