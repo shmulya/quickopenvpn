@@ -1,17 +1,14 @@
 import BaseHTTPServer, SimpleHTTPServer
-import ssl, subprocess, json, re, os, logging
+import ssl, subprocess, json, re, os, logging, yaml
 #from twisted.test.test_hook import subPost
 from urllib import unquote
 
-
-WORKDIR = os.getcwd()
-CERTDIR = WORKDIR+'/ca' # DO NOT CHANGE IF DEFAULT INSTALL path to your certificate storage (keystorage from install)
-ipadr = '127.0.0.1' #IP for HTTPS connection
-org = 'Shmula.inc' #Your company
-certFile = CERTDIR+'/sslcert.pem'
-logging.basicConfig(format='[%(levelname)s] [%(asctime)s] - %(message)s', filename=WORKDIR+'/log/crt.log', level=logging.WARN)
-
-
+def response(cl,cont,resp=200,type='text/html'):
+    cl.send_response(resp)
+    cl.send_header("Content-type", type)
+    cl.end_headers()
+    cl.wfile.write(cont)
+    
 def userconfig(cn):
     tmpl = open('%s/data/templates/client.conf'%WORKDIR,'r').read()
     conf = open('%s/%s.conf'%(CERTDIR,cn),'w')
@@ -47,11 +44,6 @@ def certlist():
             crtlist.append([str[0],str[3],str[5],str[6],bf,af,tt])
     return crtlist
 
-def response(cl,cont,resp=200,type='text/html'):
-    cl.send_response(resp)
-    cl.send_header("Content-type", type)
-    cl.end_headers()
-    cl.wfile.write(cont)
 
 def tt_of_cert(sn,st):
     tt = subprocess.check_output("openssl x509 -text -in '%s/%s.pem' -noout | grep 'TLS' | awk '{print($3)}'"%(CERTDIR,sn), shell=True)
@@ -79,7 +71,7 @@ def revtime(sn):
         if srch != None:
             fl = True
 
-def certgen(cn,f,typ,c='RU',o=org, csr=None):
+def certgen(cn,f,typ,o,c='RU', csr=None):
     if f == '0':
         res = subprocess.call('openssl genrsa -out "%s/%s.key"'%(CERTDIR,cn),shell=True, stdout=open('/dev/null', 'w'), stderr=subprocess.STDOUT)
         if res == 0:
@@ -178,7 +170,7 @@ class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     response(self, json.dumps(certlist()), type='application/json')
                 elif req[0] == 'crtgen':
                     if req[2] == '0': 
-                        res = certgen(req[1],req[2],req[3])
+                        res = certgen(req[1],req[2],req[3],org)
                         if res == True:
                             logging.debug('New certificate for CN=%s created'%req[1])
                             response(self,'Done')
@@ -186,7 +178,7 @@ class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                             logging.error('Can\'t create new certificate and key, CN is '+req[1])
                             response(self,'Error, see server log', 500)
                     elif req[2] == '1':
-                        res = certgen(req[1],req[2],req[3],csr=req[4])
+                        res = certgen(req[1],req[2],req[3],org,csr=req[4])
                         if res == True:
                             logging.debug('Certificate from csr for CN=%s created'%req[1])
                             response(self,'Done')
@@ -210,13 +202,26 @@ class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         logstr = '[%s] - %s %s\n'%(self.log_date_time_string(),self.address_string(),format%args)
         logging.debug(logstr)
 
-if os.path.exists(WORKDIR+'/data') == True:
+runpath = os.getcwd()
+
+if os.path.exists(runpath+'/config') == True:
+    
+    conf = open('%s/config'%runpath,'r').read()
+    config = yaml.load(conf)
+    print config
+    WORKDIR = config.get('WORKDIR')
+    CERTDIR = config.get('CERTDIR')
+    certFile = config.get('sslcrt')
+    ipadr = config.get('ipadr')
+    org = config.get('org')
+    logging.basicConfig(format='[%(levelname)s] [%(asctime)s] - %(message)s', filename=WORKDIR+'/log/crt.log', level=logging.WARN)
     
     httpd = BaseHTTPServer.HTTPServer((ipadr, 4443), MyHandler)
     
-    httpd.socket = ssl.wrap_socket (httpd.socket, certfile=certFile, server_side=True)
+    httpd.socket = ssl.wrap_socket (httpd.socket, certfile='ca/sslcert.pem', server_side=True)
     httpd.serve_forever()
 else:
-    print '==================================================================================='
-    print 'Can\'t find data directory. Check that srv.py started from directory where it placed'
-    print '==================================================================================='
+    print '======================================='
+    print 'Can\'t find config file. Check that it exists and srv.py started from directory where it placed. Also you can start it by ./start'
+    print '======================================='
+

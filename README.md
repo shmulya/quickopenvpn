@@ -2,7 +2,10 @@
 
 ## Install
 
-Run 'python install.py' in command line. Follow the instructions.
+```
+pip install pyyaml
+```
+And run 'python install.py' in command line. Follow the instructions.
 
 
 ## Run

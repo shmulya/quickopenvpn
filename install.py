@@ -1,4 +1,4 @@
-import subprocess, os
+import subprocess, os, yaml
 
 yes = set(['yes','y', 'ye', ''])
 no = set(['no','n'])
@@ -24,9 +24,11 @@ if os.path.exists(workdir+'/data') == True:
             certdir = certdir[:-1]
     
     mail = loop_input('E-mail: ')
+    ipadr = loop_input('Web interface will listen IP: ')
     
     while fl == False:
         if os.path.exists(certdir)==False:
+            res = subprocess.call('cd "%s" && mkdir log && mkdir tmp'%workdir, shell = True)
             res = subprocess.call('mkdir "%s"'%certdir, shell=True)
             res = subprocess.call('cd "%s" && rm -rf * && mkdir arc && touch serial && echo 01 > serial && touch index.txt'%(certdir), shell=True, stdout=open('/dev/null', 'w'), stderr=subprocess.STDOUT)
             file = open('%s/data/templates/openssl.tmp'%workdir,'r').read()
@@ -37,6 +39,7 @@ if os.path.exists(workdir+'/data') == True:
         else:
             cho = raw_input('Directory %s already exist, do you want to use it (all files will be deleted)?: [y/n] ').lower()
             if cho in yes:
+                res = subprocess.call('cd "%s" && mkdir log && mkdir tmp'%workdir)
                 res = subprocess.call('cd "%s" && rm -rf * && mkdir arc && touch serial && echo 01 > serial && touch index.txt'%(certdir), shell=True, stdout=open('/dev/null', 'w'), stderr=subprocess.STDOUT)
                 file = open('%s/data/templates/openssl.tmp'%workdir,'r').read()
                 conf = open('%s/openssl.cnf'%certdir,'w')
@@ -45,15 +48,9 @@ if os.path.exists(workdir+'/data') == True:
                 fl = True
             if cho in no:
                 certdir = loop_input('Keystorage directory path: ')
-    if certdir != workdir+'/ca':
-        print '==============================='
-        print 'You set custom CA path, plese change CERTDIR variable in srv.py'
-        print '==============================='
+                
     c = loop_input('Coutry code(2 simbols): ')
     o = loop_input('Organisation: ')
-    print '============='
-    print 'Change string "org" in srv.py'
-    print '============='
     cn = loop_input('CA server name (Use your IP or domain): ')
     print 'Attempt to create CA certificate and private key...'
     res = subprocess.call('cd "%s" && openssl req -nodes -config "%s/openssl.cnf" -days 1825 -x509 -newkey rsa -keyout ca.key -out ca.crt -subj "/C=%s/O=%s/CN=%s"'%(certdir,certdir,c,o,cn), shell=True, stdout=open('./log/install.log', 'a'), stderr=subprocess.STDOUT)
@@ -106,6 +103,7 @@ if os.path.exists(workdir+'/data') == True:
         str = prks + '\n' + crts
         itssl = open(certdir+'/sslcert.pem','w').write(str)
         file = open('%s/data/templates/server.conf'%workdir,'r').read()
+        open(workdir+'/config','w').write('org : ' + o + '\n' + 'ipadr : ' + ipadr + '\n' + 'CERTDIR : ' + certdir + '\n' + 'sslcrt : ' + certdir+'/sslcert.pem' + '\n' + 'WORKDIR : ' + workdir)
         open(workdir+'/server.conf','w').write(file%(certdir,certdir,certdir,certdir,certdir,certdir))
         
     else:
