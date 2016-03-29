@@ -3,6 +3,11 @@
 ## Install
 
 ```
+deb:
+apt-get install python-pip openssl openvpn
+rhel:
+yum install python-pip openssl openvpn
+
 pip install pyyaml
 ```
 And run 
