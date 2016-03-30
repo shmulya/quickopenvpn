@@ -5,6 +5,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link href="style.css" rel="stylesheet" type="text/css" />
 
+
 <script language="javascript" type="text/javascript" src="js/jquery.js"></script>
 
 <script type="text/javascript">
@@ -77,10 +78,10 @@
                 });
                 if ( result[key][0] == 'V' ) {
                     if ( result[key][3] == '1' ) {
-                        $('#certs').append('<tr><td>'+result[key][1]+"</td><td>"+result[key][0]+"</td><td>"+result[key][4]+"</td><td>"+result[key][5]+"</td><td>C="+result[key][2]['C']+", CN="+result[key][2]['CN']+", O="+result[key][2]['O']+", CertType: "+result[key][6]+"</td><td><button id="+result[key][1]+">Revoke</button><button id=dw"+result[key][1]+">Download</button></td></tr>");
+                        $('#certs').append('<tr><td>'+result[key][1]+"</td><td align='center'>"+result[key][0]+"</td><td>"+result[key][4]+"</td><td>"+result[key][5]+"</td><td>C="+result[key][2]['C']+", CN="+result[key][2]['CN']+", O="+result[key][2]['O']+", CertType: "+result[key][6]+"</td><td align='center' style='padding:5px'><button class='btn btn-success btn-sm' id="+result[key][1]+">Revoke</button> <button class='btn btn-success btn-sm' id=dw"+result[key][1]+">Download</button></td></tr>");
                     }
                     else if ( result[key][3] == '0' ) {
-                        $('#certs').append('<tr><td>'+result[key][1]+"</td><td>"+result[key][0]+"</td><td>"+result[key][4]+"</td><td>"+result[key][5]+"</td><td>C="+result[key][2]['C']+", CN="+result[key][2]['CN']+", O="+result[key][2]['O']+", CertType: "+result[key][6]+"</td><td><button id="+result[key][1]+">Revoke</button></td></tr>");
+                        $('#certs').append('<tr><td>'+result[key][1]+"</td><td align='center'>"+result[key][0]+"</td><td>"+result[key][4]+"</td><td>"+result[key][5]+"</td><td>C="+result[key][2]['C']+", CN="+result[key][2]['CN']+", O="+result[key][2]['O']+", CertType: "+result[key][6]+"</td><td align='center' style='padding:5px'><button class='btn btn-success btn-sm' id="+result[key][1]+">Revoke</button></td></tr>");
                     }
                     $('#'+result[key][1]).click( function () {
                         choise = confirm("Are you really want to revoke certificate?");
@@ -93,7 +94,7 @@
                     });
                 }
                 else {
-                    $('#certs').append('<tr><td>'+result[key][1]+"</td><td>"+result[key][0]+"</td><td>"+result[key][4]+"</td><td>"+result[key][5]+"</td><td>C="+result[key][2]['C']+", CN="+result[key][2]['CN']+", O="+result[key][2]['O']+", CertType: "+result[key][6]+"</td></td></tr>");
+                    $('#certs').append('<tr><td>'+result[key][1]+"</td><td align='center'>"+result[key][0]+"</td><td>"+result[key][4]+"</td><td>"+result[key][5]+"</td><td>C="+result[key][2]['C']+", CN="+result[key][2]['CN']+", O="+result[key][2]['O']+", CertType: "+result[key][6]+"</td><td> </td></tr>");
                 }
             });    
         });
@@ -154,15 +155,16 @@
           <div class="clr"></div>
           <div style='position:relative;height:100%;' id='frtbl'>
           <center>
-          <table border='1'>
+          
+          <table xmlns:xs="http://www.w3.org/2001/XMLSchema" class="table table-striped">
             <tbody id='certs'>
                 <tr>
-                    <td>S/N</td>
-                    <td>State</td>
-                    <td>Start Date</td>
-                    <td>End Date</td>
-                    <td>Options</td>
-                    <td>Action</td>
+                    <th>S/N</th>
+                    <th>State</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Options</th>
+                    <th>Action</th>
                 </tr>
             </tbody>
         </table>
@@ -170,7 +172,7 @@
         </div>
         <div class="clr"></div>
         <div style='position:relative;margin:20px' id='but'>
-            <button id="popupl">Add</button>
+            <button class='btn btn-success' id="popupl">Add</button>
         </div>
         </div>
       </div>
@@ -187,15 +189,17 @@
 <div id="popupContact" style="display: none; border: solid 1px black;background-color: #FFFFFF;">
     <div style="height: 100px; width: 340px;margin: 10px;">
         <div style='position:relative;width:100%;height:20%;'>
-            <button id="popupContactClose">X</button>
+            <button class='btn btn-success btn-sm' id="popupContactClose">X</button>
         </div>
-        <div style='position:relative;width:100%;height:80%;margin-top:15px;'>
+        <div style='position:relative;width:100%;height:80%;margin-top:25px;'>
             <div style='position:relative;width:60%;float:left;'>
                 Canonical Name:<font color='red'>*</font><br>
                 <input id='cn'> 
             </div>
             <div align='right' style='position:relative;width:40%;float:left;'>
-                <button id='crtgen'>Generate New</button><br><br>
+                <button class='btn btn-success' id='crtgen'>Generate New</button>
+            </div>
+            <div align='right' style='position:relative;width:40%;float:left;margin-top:5px'>
                 <input type='radio' value='srv' name='tp'>Server</input><input type='radio' value='clnt' name='tp' checked>Client</input>
             </div>
         </div>
