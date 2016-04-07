@@ -3,6 +3,10 @@
 ## Install
 
 ```
+git clone https://github.com/shmulya/quickopenvpn.git
+```
+
+```
 deb:
 apt-get install python-pip openssl openvpn
 rhel:
