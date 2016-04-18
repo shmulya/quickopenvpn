@@ -148,11 +148,30 @@ if os.path.exists(workdir+'/data') == True:
                 res = subprocess.call('sudo service openvpn start', shell = True)
                 if res == 0:
                     print 'OpenVPN server started'
+                    print ''
+                    print 'If you want to use your OpenVPN server as Internet gate open /etc/sysctl.conf with texeditor (nano for example) and uncomment line'
+                    print '    net.ipv4.ip_forward=1    '
+                    print 'and run'
+                    print '    sudo sysctl -p'
+                    print 'Add MASQUERADE rule in iptables'
+                    print '    iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE'
+                    print 'and save it'
+                    print '    iptables-save > /etc/nat.conf'
+                    print 'Create new startup script in /etc/network/if-up.d/iptables'
+                    print '    sudo nano /etc/network/if-up.d/iptables'
+                    print 'and insert line:'
+                    print '    iptables-restore < /etc/nat.conf'
+                    print 'Save and close. Change permissions to 755 owner to root for new script:'
+                    print '    sudo chmod 755 /etc/network/if-up.d/iptables'
+                    print '    sudo chown root:root /etc/network/if-up.d/iptables'
+                    print ''
+                    print 'Done!'
                 else:
                     print 'Can`t start OpenVPN'
+                
             else:
                 print 'Error, can`t move config file to /etc/openvpn/'
-                            
+            
         else:
             print 'Your disctributive is not supported'
 
