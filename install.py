@@ -1,4 +1,4 @@
-import subprocess, os, yaml
+import subprocess, os, yaml, re
 
 yes = set(['yes','y', 'ye', ''])
 no = set(['no','n'])
@@ -24,8 +24,23 @@ if os.path.exists(workdir+'/data') == True:
             certdir = certdir[:-1]
     
     mail = loop_input('E-mail: ')
-    ipadr = loop_input('Web interface will listen IP: ')
-    
+    while len(mail) > 40:
+        mail = loop_input('Max length 40 symbols, try again: ').upper()
+
+    flip = False
+    while flip == False:
+        ipadr = loop_input('Web interface will listen IP (* or 0.0.0.0 for any interface): ')
+        if ipadr == '*':
+            ipadr = '0.0.0.0'
+            flip = True
+        else:
+            res = re.search('\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}', ipadr)
+            if res != None:
+                ipadr = res.group(0)
+                flip = True
+            elif res == None:
+                print 'It is not IP address, try again'
+                
     while fl == False:
         if os.path.exists(certdir)==False:
             res = subprocess.call('cd "%s" && mkdir log && mkdir tmp'%workdir, shell = True)
@@ -49,9 +64,13 @@ if os.path.exists(workdir+'/data') == True:
             if cho in no:
                 certdir = loop_input('Keystorage directory path: ')
                 
-    c = loop_input('Coutry code(2 simbols): ')
-    o = loop_input('Organisation: ')
+    c = loop_input('Coutry code(2 symbols): ').upper()
+    while len(c) > 2:
+        c = loop_input('You type more than 2 symbols, try again: ').upper()
+    o = loop_input('Organisation: ')    
     cn = loop_input('CA server name (Use your IP or domain): ')
+    while len(cn) > 64:
+        cn = loop_input('Max length 64 symbols, try again: ').upper()
     print 'Attempt to create CA certificate and private key...'
     res = subprocess.call('cd "%s" && openssl req -nodes -config "%s/openssl.cnf" -days 1825 -x509 -newkey rsa -keyout ca.key -out ca.crt -subj "/C=%s/O=%s/CN=%s"'%(certdir,certdir,c,o,cn), shell=True, stdout=open('./log/install.log', 'a'), stderr=subprocess.STDOUT)
     if res == 0:
@@ -92,7 +111,7 @@ if os.path.exists(workdir+'/data') == True:
         print "Can't sign OpenVPN server certificate"
     if flt == True:
         print ''
-        print 'Your openvpn.conf in server.conf'
+        print 'Your openvpn config file in server.conf'
         print ''
         open(workdir+'/start','w').write('cd "%s"\npython srv.py&'%workdir)
         open(workdir+'/stop','w').write("PID=`ps aef | grep srv.py | grep -v grep | awk '{print ($1)}'`\nkill -9 $PID")
@@ -104,11 +123,39 @@ if os.path.exists(workdir+'/data') == True:
         itssl = open(certdir+'/sslcert.pem','w').write(str)
         file = open('%s/data/templates/server.conf'%workdir,'r').read()
         open(workdir+'/config','w').write('org : ' + o + '\n' + 'ipadr : ' + ipadr + '\n' + 'CERTDIR : ' + certdir + '\n' + 'sslcrt : ' + certdir+'/sslcert.pem' + '\n' + 'WORKDIR : ' + workdir)
-        open(workdir+'/server.conf','w').write(file%(certdir,certdir,certdir,certdir,certdir,certdir))
-        
+        open(workdir+'/server.conf','w').write(file%(certdir,certdir,certdir,certdir,certdir,certdir))        
     else:
         print ''
         print 'Error, read %s/log/ for more information'%workdir
+        
+    cho = raw_input('Do you want to try configure and run OpenVPN server automatically? Need to be root or have a sudo. (Work in Ubuntu WITHOUT SYSTEMD): [y/n] ').lower()
+    if cho in yes:
+        rls = subprocess.check_output('cat /etc/*release', shell = True)
+        srch = re.search('([Uu]buntu)|([Cc]ent[Oo][Ss])|(RHEL)|(rhel)', rls)
+        if srch.group(0).lower() == 'ubuntu':
+            res = subprocess.call('dpkg --get-selections | grep -v deinstall | grep "openvpn"', shell = True)
+            if res == 0:
+                res = subprocess.call('sudo mv "%s/server.conf" /etc/openvpn/openvpn_server.conf'%workdir, shell = True)
+            else:
+                subprocess.call('sudo apt-get install openvpn', shell = True)
+                res = subprocess.call('sudo mv "%s/server.conf" /etc/openvpn/openvpn_server.conf'%workdir, shell = True)
+            if res == 0:
+                res = subprocess.call('sudo update-rc.d openvpn enable 2345', shell = True)
+                if res == 0:
+                    print 'OpenVPN add to start after boot'
+                else:
+                    print 'Can`t add OpenVPN to autostart after boot'
+                res = subprocess.call('sudo service openvpn start', shell = True)
+                if res == 0:
+                    print 'OpenVPN server started'
+                else:
+                    print 'Can`t start OpenVPN'
+            else:
+                print 'Error, can`t move config file to /etc/openvpn/'
+                            
+        else:
+            print 'Your disctributive is not supported'
+
 else:
     print '=============================='
     print 'Can\'t find data directory. Check that install.py started from directory where it placed'
