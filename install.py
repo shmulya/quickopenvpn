@@ -86,7 +86,7 @@ if os.path.exists(workdir+'/data') == True:
     c = loop_input('Coutry code(2 symbols): ').upper()
     while len(c) > 2:
         c = loop_input('You type more than 2 symbols, try again: ').upper()
-    o = loop_input('Organisation: ')    
+    o = loop_input('Organisation: ').replace(' ', '_')
     cn = loop_input('CA server name (Use your IP or domain): ')
     while len(cn) > 64:
         cn = loop_input('Max length 64 symbols, try again: ').upper()
@@ -185,8 +185,10 @@ if os.path.exists(workdir+'/data') == True:
                             frwrd = re.search('#*net.ipv4.ip_forward=1', line)
                             if frwrd != None:
                                 if line[0] == '#':
+                                    frwrdfl = True
                                     sysctldict.append(line[1:])
                                 else:
+                                    frwrdfl = False
                                     sysctldict.append(line)
                             else:
                                 if line == '\n':
@@ -194,19 +196,20 @@ if os.path.exists(workdir+'/data') == True:
                                 else:
                                     sysctldict.append(line)
                         sysctl.close()
-                        open(workdir+'/tmp/sysctl.conf','w').write('\n'.join(sysctldict))
-                        res = subprocess.call('sudo cp %s/tmp/sysctl.conf /etc/sysctl.conf && sudo chown root:root /etc/sysctl.conf && sudo sysctl -p'%workdir, shell = True, stdout=open('./log/install.log', 'a'), stderr=subprocess.STDOUT)
-                        if res == 0:
-                            print 'IPv4 forwarding enabled'
-                        else:
-                            print "Can't enable IPv4 forwarding, see logs"
-                        res = subprocess.call('sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE && sudo iptables-save > %s/nat.conf'%workdir, shell = True, stdout=open('./log/install.log', 'a'), stderr=subprocess.STDOUT)
+                        if frwrdfl == True:
+                            open(workdir+'/tmp/sysctl.conf','w').write('\n'.join(sysctldict))
+                            res = subprocess.call('sudo cp %s/tmp/sysctl.conf /etc/sysctl.conf && sudo chown root:root /etc/sysctl.conf && sudo sysctl -p'%workdir, shell = True, stdout=open('./log/install.log', 'a'), stderr=subprocess.STDOUT)
+                            if res == 0:
+                                print 'IPv4 forwarding enabled'
+                            else:
+                                print "Can't enable IPv4 forwarding, see logs"
+                        res = subprocess.call('sudo iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE && sudo iptables-save > %s/nat.conf'%workdir, shell = True, stdout=open('./log/install.log', 'a'), stderr=subprocess.STDOUT)
                         if res == 0:
                             print 'NAT enabled'
                         else:
                             print "Can't enable NAT, see logs"
                         open(workdir+'/tmp/iptables','w').write('iptables-restore < %s/nat.conf'%workdir)
-                        res = subprocess.call('sudo cp %s/tmp/iptables /etc/network/if-up.d/ && sudo chown root:root /etc/network/if-up.d/iptables'%workdir, shell = True)
+                        res = subprocess.call('sudo cp %s/tmp/iptables /etc/network/if-up.d/ && sudo chown root:root /etc/network/if-up.d/iptables && sudo chmod 755 /etc/network/if-up.d/iptables'%workdir, shell = True)
                         if res == 0:
                             print 'Iptabes rules restore added to autostart on boot'
                         else:
