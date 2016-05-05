@@ -24,11 +24,11 @@ in command line. Follow the instructions.
 ## Run
 
   **install.py** returns openvpn server config (server.conf) and installing CA
-server with web interface. You can start openvpn with
+server with web interface. You can start openvpn with 
+by 
 ```
 sudo openvpn --config path_to_server.conf
 ```
-  If you used autoconfig during install OpenVPN server will be started automaticaly.
   Installation script creates start and stop shell scripts for CA Web Interface, and 
 config file *config* in work directory. You can run backend with ./start and stop it by
 ./stop. Web interface available at 
