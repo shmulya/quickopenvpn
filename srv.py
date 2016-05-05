@@ -1,5 +1,6 @@
 import BaseHTTPServer, SimpleHTTPServer
-import ssl, subprocess, json, re, os, logging, yaml, md5, Cookie
+import ssl, subprocess, json, re, os, logging, yaml
+#from twisted.test.test_hook import subPost
 from urllib import unquote
 
 class certmgr():
@@ -48,7 +49,7 @@ class certmgr():
                 crtinfolist[n][4] = el[4][1:].split('/')
                 flnm = crtinfolist[n][4][2].split('=')[1]
                 if os.path.exists('%s/arc/%s.tar'%(CERTDIR,flnm)) == True:
-                    crtinfolist[n].append('1')
+                     crtinfolist[n].append('1')
                 else:
                     crtinfolist[n].append('0')
                 n = n + 1
@@ -71,7 +72,7 @@ class certmgr():
         def userconfig(cn):
             tmpl = open('%s/data/templates/client.conf'%WORKDIR,'r').read()
             conf = open('%s/%s.conf'%(CERTDIR,cn),'w')
-            conf.write(tmpl%(vpnip,cn,cn,cn,cn,cn,cn))
+            conf.write(tmpl%(ipadr,cn,cn,cn,cn,cn,cn))
             conf.close()
         fl = False
         if f == '0':
@@ -104,7 +105,7 @@ class certmgr():
             for lin in unquote(csr).split('\n'):
                 n = n + 1
                 if n == 1 or n == len(unquote(csr).split('\n')):
-                    lin = lin.replace('+',' ')
+                   lin = lin.replace('+',' ')
                 str = str + lin + '\n'
             file.write(str)
             file.close()
@@ -142,61 +143,25 @@ class certmgr():
 class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
     def do_GET(self):
-        srch = re.search('(.js$)|(.css$)|(images)', self.path)
+        if self.path == '/':
+            self.response(self,open(WORKDIR+'/data/pages/index.html','r').read())
+        elif self.path == '/crl.pem':
+            self.response(self, open(CERTDIR+'/crl.pem','rb').read(), type='application/x-pem-file')
+        srch = re.search('arc/', self.path)
         if srch != None:
-            srch1 = re.search('.js$', self.path)
-            if srch1 != None:
-                try:
-                    self.response(self, open(WORKDIR+'/data/pages'+self.path,'rb').read(), type='text/javascript')
-                except IOError:
-                    self.response(self, open(WORKDIR+'/data/pages/404.html','r').read(), 404)
-            srch2 = re.search('.css$', self.path)
-            if srch2 != None:
-                try:
-                    self.response(self, open(WORKDIR+'/data/pages'+self.path,'rb').read(), type='text/css')
-                except IOError:
-                    self.response(self, open(WORKDIR+'/data/pages/404.html','r').read(), 404)
-            srch3 = re.search('images/[\w\s]+', self.path)
-            if srch3 != None:
-                try:
-                    self.response(self, open(WORKDIR+'/data/pages'+self.path,'rb').read(), type='image/jpeg')
-                except IOError:
-                    self.response(self, open(WORKDIR+'/data/pages/404.html','r').read(), 404)
-            else:
-                srch31 = re.search('images/$', self.path)
-                if srch31 != None:
-                    self.response(self, open(WORKDIR+'/data/pages/403.html','r').read(), 403)
-        if self.headers.get('Cookie') is None and srch == None:
-            self.response(self,open(WORKDIR+'/data/pages/md5jq.html','r').read())
-        elif self.headers.get('Cookie') != None:
-            vercook = Cookie.BaseCookie()
-            vercook.load(self.headers.get('Cookie'))
-            hsver = md5.new()
-            hsver.update('%s %s'%(self.headers.get('User-Agent'),self.client_address[0]))
-            for k,v in vercook.iteritems():
-                if k == 'restricted_cookie':
-                    if v.value == hsver.hexdigest():
-                        if os.path.exists(WORKDIR+'/session/'+hsver.hexdigest()) == True:
-                            if self.path == '/' or self.path == '/index.html':
-                                self.response(self,open(WORKDIR+'/data/pages/index.html','r').read())
-                            srch = re.search('arc/[\w\s]+', self.path)
-                            if srch != None:
-                                try:
-                                    self.response(self, open(CERTDIR+self.path,'rb').read(), type='application/x-tar')
-                                except IOError: 
-                                    self.response(self, open(WORKDIR+'/data/pages/404.html','r').read(), 404)
-                            else:
-                                srch01 = re.search('arc/$', self.path)
-                                if srch01 != None:
-                                    self.response(self, open(WORKDIR+'/data/pages/403.html','r').read(), 403)
-                        else:
-                            self.response(self, 'Session file is not found')
-                else:
-                    self.response(self, 'Cookie is not valid')
-                    
+            self.response(self, open(CERTDIR+self.path,'rb').read(), type='application/x-tar')
+        srch1 = re.search('.js$', self.path)
+        if srch1 != None:
+            self.response(self, open(WORKDIR+'/data/pages/'+self.path,'rb').read(), type='text/javascript')
+        srch2 = re.search('images', self.path)
+        if srch2 != None:
+            self.response(self, open(WORKDIR+'/data/pages/'+self.path,'rb').read(), type='image/jpeg')
+        srch3 = re.search('.css$', self.path)
+        if srch3 != None:
+            self.response(self, open(WORKDIR+'/data/pages/'+self.path,'rb').read(), type='text/css')      
     def do_POST(self):
-        
-        if self.path == '/login':
+        if self.path == '/api':
+            manager = certmgr()
             content_len = int(self.headers.getheader('content-length', 0))
             post_body = self.rfile.read(content_len)
             post_body = post_body.split('&')
@@ -204,78 +169,39 @@ class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             for it in post_body:
                 f = it.split('=')
                 req.append(f[1])
-            if req[0] == passwd:
-                self.send_response(200)
-                sesid = md5.new()
-                sesid.update('%s %s'%(self.headers.get('User-Agent'),self.client_address[0]))
-                self.send_header('Set-Cookie', 'restricted_cookie=%s; Domain=%s; Max-Age=600'%(sesid.hexdigest(),self.headers.get('Host').split(':')[0]))
-                self.end_headers()
-                sesidfile = open(WORKDIR+'/session/'+sesid.hexdigest(),'w')
-                sesidfile.close()
-        else:
-            if self.headers.get('Cookie') is None and self.path != '/login':
-                self.send_header('Content type', 'text/html')
-                self.end_headers()
-                self.wfile.write('Unauthorized')
-            elif self.headers.get('Cookie') != None:
-                vercook = Cookie.BaseCookie()
-                vercook.load(self.headers.get('Cookie'))
-                hsver = md5.new()
-                hsver.update('%s %s'%(self.headers.get('User-Agent'),self.client_address[0]))
-                for k,v in vercook.iteritems():
-                    if k == 'restricted_cookie':
-                        if v.value == hsver.hexdigest():
-                            if os.path.exists(WORKDIR+'/session/'+hsver.hexdigest()) == True:
-                                if self.path == '/api':
-                                    manager = certmgr()
-                                    content_len = int(self.headers.getheader('content-length', 0))
-                                    post_body = self.rfile.read(content_len)
-                                    post_body = post_body.split('&')
-                                    req = []
-                                    for it in post_body:
-                                        f = it.split('=')
-                                        req.append(f[1])
-                                    try:
-                                        if req[0] == 'crtget':
-                                            self.response(self, json.dumps(manager.certlist()), type='application/json')
-                                        elif req[0] == 'crtgen':
-                                            if req[2] == '0': 
-                                                res = manager.certgen(req[1],req[2],req[3],org)
-                                                if res == True:
-                                                    logging.debug('New certificate for CN=%s created'%req[1])
-                                                    self.response(self,'Done')
-                                                else:
-                                                    logging.error('Can\'t create new certificate and key, CN is '+req[1])
-                                                    self.response(self,'Error, see server log', 500)
-                                            elif req[2] == '1':
-                                                res = manager.certgen(req[1],req[2],req[3],org,csr=req[4])
-                                                if res == True:
-                                                    logging.debug('Certificate from csr for CN=%s created'%req[1])
-                                                    self.response(self,'Done')
-                                                else:
-                                                    logging.error('Can\'t sign certificate from csr, CN is '+req[1])
-                                                    self.response(self,'Error, see server log', 500)
-                                        elif req[0] == 'crtrev':
-                                            res = manager.revoke(req[1],req[2])
-                                            if res == True:
-                                                logging.debug('Certificate for CN=%s revoked'%req[2])
-                                                self.response(self, 'Done')
-                                            else:
-                                                logging.error('Can\'t revoke certificate, CN is '+req[2])
-                                                self.response(self,'Error, see server log', 500)
-                                    #except Exception:
-                                    #    pass
-                                    except IndexError:
-                                        logging.error('Check arguments in post request from client, post body is %s'%post_body)
-                                        self.response(self, 'Error, see server log', 500)
-                            else:
-                                self.response(self, 'Session file is not found')
+            try:
+                if req[0] == 'crtget':
+                    self.response(self, json.dumps(manager.certlist()), type='application/json')
+                elif req[0] == 'crtgen':
+                    if req[2] == '0': 
+                        res = manager.certgen(req[1],req[2],req[3],org)
+                        if res == True:
+                            logging.debug('New certificate for CN=%s created'%req[1])
+                            self.response(self,'Done')
                         else:
-                            self.response(self, 'Password incorrect')
+                            logging.error('Can\'t create new certificate and key, CN is '+req[1])
+                            self.response(self,'Error, see server log', 500)
+                    elif req[2] == '1':
+                        res = manager.certgen(req[1],req[2],req[3],org,csr=req[4])
+                        if res == True:
+                            logging.debug('Certificate from csr for CN=%s created'%req[1])
+                            self.response(self,'Done')
+                        else:
+                            logging.error('Can\'t sign certificate from csr, CN is '+req[1])
+                            self.response(self,'Error, see server log', 500)
+                elif req[0] == 'crtrev':
+                    res = manager.revoke(req[1],req[2])
+                    if res == True:
+                        logging.debug('Certificate for CN=%s revoked'%req[2])
+                        self.response(self, 'Done')
                     else:
-                        self.end_headers()
-                        self.wfile.write('Cookie is not valid')
-                
+                        logging.error('Can\'t revoke certificate, CN is '+req[2])
+                        self.response(self,'Error, see server log', 500)
+            #except Exception:
+            #    pass
+            except IndexError:
+                logging.error('Check arguments in post request from client, post body is %s'%post_body)
+                self.response(self, 'Error, see server log', 500)
     def log_message(self, format, *args):
         logstr = '[%s] - %s %s\n'%(self.log_date_time_string(),self.address_string(),format%args)
         logging.debug(logstr)
@@ -296,9 +222,7 @@ if os.path.exists(runpath+'/config') == True:
     CERTDIR = config.get('CERTDIR')
     certFile = config.get('sslcrt')
     ipadr = config.get('ipadr')
-    vpnip = config.get('vpnip')
     org = config.get('org')
-    passwd = config.get('password')
     logging.basicConfig(format='[%(levelname)s] [%(asctime)s] - %(message)s', filename=WORKDIR+'/log/crt.log', level=logging.WARN)
     
     if __name__ == '__main__':
