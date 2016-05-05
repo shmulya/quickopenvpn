@@ -145,7 +145,7 @@ if os.path.exists(workdir+'/data') == True:
         hash.update(passwd)
         open(workdir+'/config','w').write('org : ' + o + '\n' + 'ipadr : ' + ipadr + '\n' + 'CERTDIR : ' + certdir + '\n' + 'sslcrt : ' + certdir+'/sslcert.pem' + '\n' + 'WORKDIR : ' + workdir + '\n' + 'password : ' + hash.hexdigest() + '\n' + 'vpnip : ' + vpnipadr)
         open(workdir+'/server.conf','w').write(file%(certdir,certdir,certdir,certdir,certdir,certdir))  
-        subprocess.call('crontab -l | { cat; echo "find %s/session/ -cmin +10 -type f -delete"; } | crontab -'%workdir, shell = 'True', stdout=open('./log/install.log', 'a'), stderr=subprocess.STDOUT)      
+        subprocess.call('crontab -l | { cat; echo "*/1 * * * * find %s/session/ -cmin +10 -type f -delete"; } | crontab -'%workdir, shell = 'True', stdout=open('./log/install.log', 'a'), stderr=subprocess.STDOUT)      
     else:
         print ''
         print 'Error, read %s/log/ for more information'%workdir
@@ -177,23 +177,59 @@ if os.path.exists(workdir+'/data') == True:
                 if res == 0:
                     print 'OpenVPN server started'
                     print ''
-                    print 'If you want to use your OpenVPN server as Internet gate open /etc/sysctl.conf with texeditor (nano for example) and uncomment line'
-                    print '    net.ipv4.ip_forward=1    '
-                    print 'and run'
-                    print '    sudo sysctl -p'
-                    print 'Add MASQUERADE rule in iptables'
-                    print '    iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE'
-                    print 'and save it'
-                    print '    iptables-save > /etc/nat.conf'
-                    print 'Create new startup script in /etc/network/if-up.d/iptables'
-                    print '    sudo nano /etc/network/if-up.d/iptables'
-                    print 'and insert line:'
-                    print '    iptables-restore < /etc/nat.conf'
-                    print 'Save and close. Change permissions to 755 owner to root for new script:'
-                    print '    sudo chmod 755 /etc/network/if-up.d/iptables'
-                    print '    sudo chown root:root /etc/network/if-up.d/iptables'
-                    print ''
-                    print 'Done!'
+                    cho = raw_input('Do you want autoconfig Internet gate?: [y/n] ').lower()
+                    if cho in yes:
+                        sysctl = open('/etc/sysctl.conf')
+                        sysctldict = []
+                        for line in sysctl:
+                            frwrd = re.search('#*net.ipv4.ip_forward=1', line)
+                            if frwrd != None:
+                                if line[0] == '#':
+                                    sysctldict.append(line[1:])
+                                else:
+                                    sysctldict.append(line)
+                            else:
+                                if line == '\n':
+                                    pass
+                                else:
+                                    sysctldict.append(line)
+                        sysctl.close()
+                        open(workdir+'/tmp/sysctl.conf','w').write('\n'.join(sysctldict))
+                        res = subprocess.call('sudo cp %s/tmp/sysctl.conf /etc/sysctl.conf && sudo chown root:root /etc/sysctl.conf && sudo sysctl -p'%workdir, shell = True, stdout=open('./log/install.log', 'a'), stderr=subprocess.STDOUT)
+                        if res == 0:
+                            print 'IPv4 forwarding enabled'
+                        else:
+                            print "Can't enable IPv4 forwarding, see logs"
+                        res = subprocess.call('sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE && sudo iptables-save > %s/nat.conf'%workdir, shell = True, stdout=open('./log/install.log', 'a'), stderr=subprocess.STDOUT)
+                        if res == 0:
+                            print 'NAT enabled'
+                        else:
+                            print "Can't enable NAT, see logs"
+                        open(workdir+'/tmp/iptables','w').write('iptables-restore < %s/nat.conf'%workdir)
+                        res = subprocess.call('sudo cp %s/tmp/iptables /etc/network/if-up.d/ && sudo chown root:root /etc/network/if-up.d/iptables'%workdir, shell = True)
+                        if res == 0:
+                            print 'Iptabes rules restore added to autostart on boot'
+                        else:
+                            print "Can't add iptables rules restor to start on boot, see logs"
+                        subprocess.call('rm -rf %s/tmp/*'%workdir, shell = True)
+                    else: 
+                        print 'If you want to use your OpenVPN server as Internet gate open /etc/sysctl.conf with texeditor (nano for example) and uncomment line'
+                        print '    net.ipv4.ip_forward=1    '
+                        print 'and run'
+                        print '    sudo sysctl -p'
+                        print 'Add MASQUERADE rule in iptables'
+                        print '    sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE'
+                        print 'and save it'
+                        print '    iptables-save > /etc/nat.conf'
+                        print 'Create new startup script in /etc/network/if-up.d/iptables'
+                        print '    sudo nano /etc/network/if-up.d/iptables'
+                        print 'and insert line:'
+                        print '    iptables-restore < /etc/nat.conf'
+                        print 'Save and close. Change permissions to 755 owner to root for new script:'
+                        print '    sudo chmod 755 /etc/network/if-up.d/iptables'
+                        print '    sudo chown root:root /etc/network/if-up.d/iptables'
+                        print ''
+                        print 'Done!'
                 else:
                     print 'Can`t start OpenVPN'
                 
