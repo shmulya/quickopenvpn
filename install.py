@@ -203,7 +203,7 @@ if os.path.exists(workdir+'/data') == True:
                                 print 'IPv4 forwarding enabled'
                             else:
                                 print "Can't enable IPv4 forwarding, see logs"
-                        res = subprocess.call('sudo iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE && sudo iptables-save > %s/nat.conf'%workdir, shell = True, stdout=open('./log/install.log', 'a'), stderr=subprocess.STDOUT)
+                        res = subprocess.call('sudo iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o %s -j MASQUERADE && sudo iptables-save > %s/nat.conf'%(loop_input('You Internet inteface name (eth0 for example): '),workdir), shell = True, stdout=open('./log/install.log', 'a'), stderr=subprocess.STDOUT)
                         if res == 0:
                             print 'NAT enabled'
                         else:
