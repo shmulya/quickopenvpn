@@ -31,14 +31,6 @@ def ipcheck(rwdt):
         return flip
 
 if os.path.exists(workdir+'/data') == True:
-
-    cho = raw_input('Use CA storage path by default [%s/ca]?: [y/n] '%workdir).lower()
-    if cho in yes:
-        certdir = workdir+'/ca'
-    elif cho in no:
-        certdir = loop_input('CA storage directory path: ')
-        if certdir[-1] == '/':
-            certdir = certdir[:-1]
     
     mail = loop_input('E-mail: ')
     while len(mail) > 40:
@@ -60,6 +52,14 @@ if os.path.exists(workdir+'/data') == True:
         vpnipadr = loop_input('IP for incoming OpenVPN connections: ')
         ipch = ipcheck(vpnipadr)
                 
+    cho = raw_input('Use CA storage path by default [%s/ca]?: [y/n] '%workdir).lower()
+    if cho in yes:
+        certdir = workdir+'/ca'
+    elif cho in no:
+        certdir = loop_input('CA storage directory path: ')
+        if certdir[-1] == '/':
+            certdir = certdir[:-1]
+
     while fl == False:
         if os.path.exists(certdir)==False:
             res = subprocess.call('cd "%s" && mkdir log && mkdir tmp && mkdir session'%workdir, shell = True)
