@@ -208,7 +208,7 @@ if os.path.exists(workdir+'/data') == True:
                             print 'NAT enabled'
                         else:
                             print "Can't enable NAT, see logs"
-                        open(workdir+'/tmp/iptables','w').write('iptables-restore < %s/nat.conf'%workdir)
+                        open(workdir+'/tmp/iptables','w').write('#!/bin/bash\niptables-restore < %s/nat.conf'%workdir)
                         res = subprocess.call('sudo cp %s/tmp/iptables /etc/network/if-up.d/ && sudo chown root:root /etc/network/if-up.d/iptables && sudo chmod 755 /etc/network/if-up.d/iptables'%workdir, shell = True)
                         if res == 0:
                             print 'Iptabes rules restore added to autostart on boot'
